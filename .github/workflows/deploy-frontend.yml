@@ -1,0 +1,68 @@
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: frontend
+        env:
+          # Repo name — must match the actual GitHub repo for project-site
+          # asset paths to resolve. Change this if the repo is renamed.
+          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          # Points the deployed frontend at the real backend — set this
+          # repo variable (Settings -> Secrets and variables -> Actions ->
+          # Variables) to the actual Render backend URL once it exists.
+          VITE_API_BASE: ${{ vars.BACKEND_API_URL }}
+        run: npm run build
+
+      - name: SPA fallback for GitHub Pages
+        # GitHub Pages has no server-side rewrite rules the way nginx does
+        # (see frontend/nginx.conf's try_files) — a hard refresh on any
+        # client-side route like /dashboard would 404 without this.
+        # GitHub Pages' own documented workaround: serve index.html for any
+        # unmatched path by also publishing it as 404.html, then let React
+        # Router take over client-side once index.html loads.
+        working-directory: frontend
+        run: cp dist/index.html dist/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

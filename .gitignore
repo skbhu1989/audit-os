@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# Secrets — never commit real values
+.env
+apps/api/.env
+
+# OS/editor
+.DS_Store
+*.swp
+
+# Logs
+*.log

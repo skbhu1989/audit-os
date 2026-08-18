@@ -1,0 +1,35 @@
+databases:
+  - name: audit-os-db
+    databaseName: audit_os
+    plan: free
+    # This creates an OWNER role for the database. Postgres bypasses row-
+    # level security entirely for table owners — every tenant-isolation
+    # guarantee in this system depends on the running app connecting as
+    # app_runtime, a separate NON-OWNER role created by db/migrate.sh, not
+    # this owner role. See RENDER_DEPLOY.md's manual step — deliberately
+    # not auto-wired here, because getting this wrong silently disables
+    # tenant isolation with no error to notice.
+
+services:
+  - type: web
+    name: audit-os-api
+    runtime: python
+    plan: free
+    rootDir: apps/api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: https://REPLACE-WITH-YOUR-GITHUB-USERNAME.github.io
+      # DATABASE_DSN is intentionally NOT set here — see RENDER_DEPLOY.md.
+      # It must be the app_runtime connection string (created by running
+      # db/migrate.sh once, manually, with the owner connection string
+      # Render provisions above), not Render's own database connection
+      # string. Setting the wrong one here would be a silent security
+      # regression, not a loud failure.
+      - key: DATABASE_DSN
+        sync: false

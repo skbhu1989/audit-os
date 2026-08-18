@@ -1,0 +1,17 @@
+-- ============================================================
+-- 027_finance_intelligence_no_schema_change.sql
+-- The Finance Intelligence module (Master Data Intelligence,
+-- Fixed Asset Intelligence, Accrual Gap Calculator) needed no new
+-- schema — vendor.pan, vendor.gstin, vendor.bank_account_masked,
+-- and customer.pan/gstin all already existed since migration 002.
+-- Only the ingestion parser needed updating to populate
+-- bank_account_masked (which nothing had ever written to before),
+-- which is an application-code change, not a migration.
+--
+-- This file exists purely so migration numbering has no unexplained
+-- gap — 027 was reserved but a create_file call for it failed
+-- during the original session and was never retried once it became
+-- clear no DDL was actually needed. Recorded here rather than left
+-- as a silent, unexplained skip from 026 to 028.
+-- ============================================================
+select 1;
